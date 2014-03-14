@@ -361,24 +361,15 @@ Agent/UDP instproc process_data {size data} {
     set dedata [aes::aes -dir decrypt -key $key $data]
     	    
     puts "Decrypted data $dedata"
-	puts "[$node_ node-addr] received {$dedata}"
-    
-
-    $ns trace-annotate "[$node_ node-addr] received {$data}"
-    set flag1 "0"
-    set flag "0"
-    $ns trace-annotate "Replying correct question for recieved data:{$data}"
-    
-   set time 0.05
- 
-
-   set now [$ns now]
-    
-puts "udp[$node_ node-addr] send 500 $dedata"      
-#$ns at [expr $now+$time] "$udp(4) send 500 $dedata"
-   $ns at [expr $now+$time] "$udp([$node_ node-addr]) send 500 $dedata"
-  
-
+    set last [string range $dedata 13 end]
+    puts "Last three letters: $last"
+    if {$last=="xxx"} { 
+    set time 0.05
+    set now [$ns now]
+    $ns at [expr $now+$time] "$udp([$node_ node-addr]) send 500 $data" 
+    } else {
+    puts "$dedata dropped from a false node hence dropped"
+    }
 }
 
 Agent/MYUDP instproc process_data {size data} {
@@ -396,12 +387,13 @@ Agent/MYUDP instproc process_data {size data} {
     set dedata [aes::aes -dir decrypt -key $key $data]
     	    
     puts "Decrypted data $dedata"
+    set dedata [string replace $dedata 13 15 yyy]
+    set dedata [string replace $dedata 0 2 zzz]
     $ns trace-annotate "[$node_ node-addr] received {$data}"
+    puts "Decrypted data3 $dedata"
     set flag1 "0"
     set flag "0"
     $ns trace-annotate " recieved data:{$data}"
-    
-
 }
 
  
@@ -433,7 +425,7 @@ proc attach-CBR-traffic { node sink size interval } {
 
 
 
-set fulldata {sixteencharacter}
+set fulldata {sixteencharacxxx}
 
 puts "Full data is $fulldata"
 package require aes
