@@ -319,15 +319,15 @@ set udp8 [new Agent/UDP]
 $ns attach-agent $n(8) $udp8
 set udp9 [new Agent/UDP]
 $ns attach-agent $n(9) $udp9
-set udp10 [new Agent/MYUDP]
-$ns attach-agent $n(10) $udp10
+set udp(10) [new Agent/MYUDP]
+$ns attach-agent $n(10) $udp(10)
 set udp11 [new Agent/UDP]
 $ns attach-agent $n(11) $udp11
 set udp12 [new Agent/MYUDP]
 $ns attach-agent $n(12) $udp12
 set udp13 [new Agent/UDP]
 $ns attach-agent $n(13) $udp13
-set udp14 [new Agent/MYUDP]
+set udp14 [new Agent/UDP]
 $ns attach-agent $n(14) $udp14
 set udp15 [new Agent/UDP]
 $ns attach-agent $n(15) $udp15
@@ -344,9 +344,8 @@ $ns attach-agent $n(19) $udp19
 
 
 $ns connect $udp0 $udp(4)
-$ns connect $udp(4) $udp10
-
-$ns connect $udp10 $udp14
+$ns connect $udp(4) $udp(10)
+$ns connect $udp(10) $udp14
 $ns connect $udp2 $udp12
 set key [string repeat - 16]
 
@@ -368,13 +367,13 @@ Agent/UDP instproc process_data {size data} {
     set now [$ns now]
     $ns at [expr $now+$time] "$udp([$node_ node-addr]) send 500 $data" 
     } else {
-    puts "$dedata dropped from a false node hence dropped"
+    puts "$dedata recieved from a false node hence dropped"
     }
 }
 
 Agent/MYUDP instproc process_data {size data} {
     global ns
-    global udp0
+    global udp
     global udp1
     global key 
     $self instvar node_
@@ -387,13 +386,17 @@ Agent/MYUDP instproc process_data {size data} {
     set dedata [aes::aes -dir decrypt -key $key $data]
     	    
     puts "Decrypted data $dedata"
-    set dedata [string replace $dedata 13 15 yyy]
-    set dedata [string replace $dedata 0 2 zzz]
+    set dedata2 [string replace $dedata 13 15 yyy]
+    set dedata3 [string replace $dedata2 0 2 abc]
     $ns trace-annotate "[$node_ node-addr] received {$data}"
-    puts "Decrypted data3 $dedata"
-    set flag1 "0"
-    set flag "0"
-    $ns trace-annotate " recieved data:{$data}"
+    puts "Decrypted data3 $dedata3"
+package require aes
+set endata [aes::aes -dir encrypt -key $key $dedata3]
+set time 0.05
+    set now [$ns now]
+    puts "In myudp recieve $endata" 
+    $ns at [expr $now+$time] "$udp(10) send 500 $endata" 
+
 }
 
  
@@ -433,7 +436,7 @@ set endata [aes::aes -dir encrypt -key $key $fulldata]
 
 $ns at 0.3 "$udp0 send 500 $endata"
 #$ns at 0.4 "$udp(4) send 500 $endata"
-#$ns at 0.6 "$udp10 send 500 $endata"
+#$ns at 0.6 "$udp(10) send 500 $endata"
 
 $ns at 8.0 "finish"
 
